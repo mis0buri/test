@@ -1,18 +1,24 @@
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;700&display=swap');
 
   :root {
-    --bg:       #0d0d0d;
-    --surface:  #161616;
-    --surface2: #1f1f1f;
-    --border:   #2a2a2a;
-    --accent:   #c8a96e;
-    --red:      #e63946;
-    --green:    #4caf82;
-    --text:     #e8e0d0;
-    --dim:      #7a7060;
+    --bg:       #0c0b09;
+    --surface:  #17150f;
+    --surface2: #1e1b14;
+    --border:   #332d20;
+    --accent:   #9c7a4a;
+    --red:      #a3434a;
+    --green:    #5c7d63;
+    --text:     #c9bfa8;
+    --dim:      #685f4d;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; }
+  body {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.03), transparent 55%),
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%),
+      var(--bg);
+    color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh;
+  }
 
   /* HEADER */
   header {
@@ -715,13 +721,12 @@
   .stamp-btn { padding:12px 36px; font-size:15px; border-radius:10px; font-weight:700; }
   .stamp-last { text-align:center; font-size:12px; color:var(--dim); }
 
-  /* ── SAKURA DECORATION ── */
-  #sec-top { position: relative; isolation: isolate; }
-  .sakura-deco { position: absolute; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }
-  .sakura-tree { position: absolute; bottom: 0; width: 260px; opacity: .18; }
-  .sakura-tree.s-left  { left: -50px; transform: scaleX(-1); }
-  .sakura-tree.s-right { right: -50px; }
-  @media(max-width:640px) { .sakura-tree { width: 150px; } }
+  /* ── HAIKYO (荒廃した町) DECORATION ── */
+  .haikyo-deco { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }
+  .haikyo-scene { position: absolute; bottom: 0; width: 280px; opacity: .22; filter: saturate(.7); }
+  .haikyo-scene.h-left  { left: -40px; }
+  .haikyo-scene.h-right { right: -40px; transform: scaleX(-1); }
+  @media(max-width:640px) { .haikyo-scene { width: 170px; } }
 
   /* ── TOP PAGE ── */
   .top-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
