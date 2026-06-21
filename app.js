@@ -124,7 +124,7 @@ function filteredGathers() {
 // ── ナビ ──
 const _STATS = ['ranking','member','graph','history'];
 const _GALLERY = ['gallery','jare','jare-detail'];
-const _ADMIN = ['admin-members','admin-gather','admin-score'];
+const _ADMIN = ['admin-members','admin-gather','admin-score','admin-swarm'];
 function showSection(id) {
   currentSection = id;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -156,7 +156,7 @@ function showSection(id) {
     document.querySelectorAll('#subnav-gallery button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
   }
   if (isAdmin) {
-    const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力'};
+    const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力','admin-swarm':'Swarm連携'};
     document.querySelectorAll('#subnav-admin button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
   }
 
@@ -179,6 +179,7 @@ function showSection(id) {
   if (id==='admin-members') initAdminMembers();
   if (id==='admin-gather') initAdminGather();
   if (id==='admin-score') initAdminScore();
+  if (id==='admin-swarm') initAdminSwarm();
 }
 
 // ── トップページ ──
@@ -499,11 +500,20 @@ function initFirebase() {
       _auth.onAuthStateChanged(user => {
         _currentUser = user;
         updateAuthUI(user);
+        if (typeof _swarmHandleAuthReady === 'function') _swarmHandleAuthReady(user);
       });
     }
   } catch(e) {
     console.warn('Firebase init error:', e);
   }
+
+  // SwarmのOAuth認証コールバック（#access_token=...）を検出して保持
+  const swarmTokenMatch = location.hash.match(/access_token=([^&]+)/);
+  if (swarmTokenMatch) {
+    window._swarmPendingToken = decodeURIComponent(swarmTokenMatch[1]);
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+
   // ハッシュルーティング
   const initHash = location.hash;
   if (initHash.startsWith('#renban/')) {

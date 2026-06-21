@@ -912,3 +912,21 @@
   .admin-row-split > * { flex: 1; }
   .admin-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   .admin-empty { color: var(--dim); font-size: 13px; text-align: center; padding: 24px; }
+
+  .swarm-token-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .swarm-token-chip {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--accent);
+    font-family: monospace; font-size: 12px; padding: 4px 10px; border-radius: 12px; cursor: pointer;
+  }
+  .swarm-token-chip:hover { border-color: var(--accent); background: var(--surface); }
+  .swarm-template-preview {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; font-size: 13px; color: var(--text); line-height: 1.6;
+    margin-bottom: 16px; white-space: pre-wrap; word-break: break-word; min-height: 20px;
+  }
+  .swarm-checkin-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .swarm-checkin-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+  .swarm-checkin-venue { font-weight: 700; font-size: 14px; color: var(--accent); }
+  .swarm-checkin-meta { font-size: 12px; color: var(--dim); margin-top: 4px; }
+  .swarm-checkin-shout { font-size: 13px; margin-top: 6px; line-height: 1.6; }
+  .swarm-checkin-actions { display: flex; gap: 8px; margin-top: 10px; }
