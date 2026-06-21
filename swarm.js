@@ -2,16 +2,10 @@
 const SWARM_DEFAULT_TEMPLATE = "I'm at {venue} in {area}, {state} {url}";
 const SWARM_FOURSQUARE_API_VERSION = '20231010';
 
-let _swarmAccount = null;     // { accessToken, clientId, proxyPrefix } Firestoreから読み込み
-let _swarmCheckins = [];      // 直近に取得したチェックイン一覧
-
-// ── 設定パネルの開閉 ──
-function toggleSwarmSettingsPanel() {
-  const body = document.getElementById('swarm-settings-body');
-  const arrow = document.getElementById('swarm-settings-arrow');
-  const open = body.classList.toggle('open');
-  arrow.classList.toggle('open', open);
-}
+let _swarmAccount = null;       // { accessToken, clientId, proxyPrefix } Firestoreから読み込み
+let _swarmCheckins = [];        // 直近に取得したチェックイン一覧
+let _swarmVenueResults = [];    // チェックイン用の場所検索結果
+let _swarmSelectedVenue = null; // チェックイン用に選択中の場所
 
 // ── 初期化 ──
 async function initAdminSwarm() {
@@ -19,8 +13,6 @@ async function initAdminSwarm() {
   document.getElementById('swarm-redirect-uri').value = location.origin + location.pathname;
   document.getElementById('swarm-template-input').value = localStorage.getItem('swarm_template') || SWARM_DEFAULT_TEMPLATE;
   updateSwarmTemplatePreview();
-  document.getElementById('swarm-settings-body').classList.add('open');
-  document.getElementById('swarm-settings-arrow').classList.add('open');
 
   await _loadSwarmAccount();
   _renderSwarmAccountStatus();
@@ -129,6 +121,143 @@ function copySwarmRedirectUri() {
   const input = document.getElementById('swarm-redirect-uri');
   input.select();
   navigator.clipboard.writeText(input.value).catch(() => {});
+}
+
+// ── チェックイン作成 ──
+function _getSwarmGeolocation() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords),
+      () => resolve(null),
+      { timeout: 5000 }
+    );
+  });
+}
+
+async function searchSwarmVenues() {
+  const statusEl = document.getElementById('swarm-status-checkin');
+  if (!_swarmAccount || !_swarmAccount.accessToken) {
+    statusEl.textContent = '先にSwarmと連携してください';
+    statusEl.className = 'admin-status error';
+    return;
+  }
+  const query = document.getElementById('swarm-venue-query').value.trim();
+  const near = document.getElementById('swarm-venue-near').value.trim();
+  if (!query) {
+    statusEl.textContent = '検索キーワードを入力してください';
+    statusEl.className = 'admin-status error';
+    return;
+  }
+  let locationParam = '';
+  if (near) {
+    locationParam = `&near=${encodeURIComponent(near)}`;
+  } else {
+    const coords = await _getSwarmGeolocation();
+    if (coords) {
+      locationParam = `&ll=${coords.latitude},${coords.longitude}`;
+    } else {
+      statusEl.textContent = '場所を入力するか、位置情報の利用を許可してください';
+      statusEl.className = 'admin-status error';
+      return;
+    }
+  }
+  const proxyPrefix = _swarmAccount.proxyPrefix || '';
+  const apiUrl = `https://api.foursquare.com/v2/venues/search?query=${encodeURIComponent(query)}${locationParam}&oauth_token=${encodeURIComponent(_swarmAccount.accessToken)}&v=${SWARM_FOURSQUARE_API_VERSION}`;
+  statusEl.textContent = '検索中...';
+  statusEl.className = 'admin-status';
+  try {
+    const res = await fetch(proxyPrefix + apiUrl);
+    const json = await res.json();
+    if (!res.ok || (json.meta && json.meta.code !== 200)) {
+      statusEl.textContent = 'エラー: ' + (json.meta ? json.meta.errorDetail : res.statusText);
+      statusEl.className = 'admin-status error';
+      return;
+    }
+    _swarmVenueResults = (json.response && json.response.venues) || [];
+    statusEl.textContent = '';
+    statusEl.className = 'admin-status';
+    _renderSwarmVenueResults();
+  } catch(e) {
+    statusEl.textContent = '検索に失敗しました: ' + e.message + '（CORSの場合はプロキシの設定をお試しください）';
+    statusEl.className = 'admin-status error';
+  }
+}
+
+function _renderSwarmVenueResults() {
+  const listEl = document.getElementById('swarm-venue-results');
+  if (!_swarmVenueResults.length) {
+    listEl.innerHTML = '<div class="admin-empty">該当する場所が見つかりません</div>';
+    return;
+  }
+  listEl.innerHTML = _swarmVenueResults.map((v, idx) => {
+    const loc = v.location || {};
+    const addr = (loc.formattedAddress || []).join(' ');
+    return `<div class="swarm-venue-item" onclick="selectSwarmVenue(${idx})">
+      <div class="swarm-venue-name">${_esc(v.name || '')}</div>
+      <div class="swarm-venue-addr">${_esc(addr)}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectSwarmVenue(idx) {
+  const venue = _swarmVenueResults[idx];
+  if (!venue) return;
+  _swarmSelectedVenue = venue;
+  document.getElementById('swarm-selected-venue').textContent = venue.name || '';
+  document.getElementById('swarm-checkin-form').style.display = '';
+}
+
+async function submitSwarmCheckin() {
+  const statusEl = document.getElementById('swarm-status-checkin');
+  if (!_swarmAccount || !_swarmAccount.accessToken) {
+    statusEl.textContent = '先にSwarmと連携してください';
+    statusEl.className = 'admin-status error';
+    return;
+  }
+  if (!_swarmSelectedVenue) {
+    statusEl.textContent = '場所を選択してください';
+    statusEl.className = 'admin-status error';
+    return;
+  }
+  const shout = document.getElementById('swarm-checkin-shout').value.trim();
+  const proxyPrefix = _swarmAccount.proxyPrefix || '';
+  statusEl.textContent = 'チェックイン中...';
+  statusEl.className = 'admin-status';
+  try {
+    const res = await fetch(proxyPrefix + 'https://api.foursquare.com/v2/checkins/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        oauth_token: _swarmAccount.accessToken,
+        v: SWARM_FOURSQUARE_API_VERSION,
+        venueId: _swarmSelectedVenue.id,
+        shout,
+        broadcast: 'private'
+      })
+    });
+    const json = await res.json();
+    if (!res.ok || (json.meta && json.meta.code !== 200)) {
+      statusEl.textContent = 'エラー: ' + (json.meta ? json.meta.errorDetail : res.statusText);
+      statusEl.className = 'admin-status error';
+      return;
+    }
+    statusEl.textContent = 'チェックインしました ✓';
+    statusEl.className = 'admin-status ok';
+    const newCheckin = json.response && json.response.checkin;
+    if (newCheckin) {
+      _swarmCheckins.unshift(newCheckin);
+      _renderSwarmCheckinList();
+    }
+    document.getElementById('swarm-checkin-shout').value = '';
+    document.getElementById('swarm-checkin-form').style.display = 'none';
+    document.getElementById('swarm-venue-results').innerHTML = '';
+    document.getElementById('swarm-venue-query').value = '';
+    _swarmSelectedVenue = null;
+  } catch(e) {
+    statusEl.textContent = '失敗しました: ' + e.message;
+    statusEl.className = 'admin-status error';
+  }
 }
 
 // ── テンプレート編集 ──
