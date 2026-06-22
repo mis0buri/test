@@ -2,7 +2,8 @@
 const SWARM_DEFAULT_TEMPLATE = "I'm at {venue} in {area}, {state} {url}";
 const SWARM_FOURSQUARE_API_VERSION = '20231010';
 
-let _swarmAccount = null;       // { accessToken, clientId, proxyPrefix } Firestoreから読み込み
+let _swarmConfig = null;        // { clientId, proxyPrefix } admin_config/swarmから読み込み（サイト全体で共有）
+let _swarmAccount = null;       // { accessToken } swarm_accounts/{uid}から読み込み（ユーザー個別）
 let _swarmCheckins = [];        // 直近に取得したチェックイン一覧
 let _swarmVenueResults = [];    // チェックイン用の場所検索結果
 let _swarmSelectedVenue = null; // チェックイン用に選択中の場所
@@ -22,12 +23,29 @@ async function initAdminSwarm() {
   document.getElementById('swarm-template-input').value = localStorage.getItem('swarm_template') || SWARM_DEFAULT_TEMPLATE;
   updateSwarmTemplatePreview();
 
+  await _loadSwarmConfig();
+  if (_swarmConfig) {
+    document.getElementById('swarm-client-id').value = _swarmConfig.clientId || '';
+    document.getElementById('swarm-proxy-prefix').value = _swarmConfig.proxyPrefix || '';
+  }
+
   await _loadSwarmAccount();
   _renderSwarmAccountStatus();
   if (_swarmAccount && _swarmAccount.accessToken) {
     fetchSwarmCheckins();
   } else {
     _renderSwarmCheckinList();
+  }
+}
+
+async function _loadSwarmConfig() {
+  _swarmConfig = null;
+  if (!_db) return;
+  try {
+    const doc = await _db.collection('admin_config').doc('swarm').get();
+    if (doc.exists) _swarmConfig = doc.data();
+  } catch(e) {
+    console.warn('Swarm設定読み込みエラー:', e);
   }
 }
 
@@ -58,7 +76,7 @@ function _renderSwarmAccountStatus() {
     formEl.style.display = 'none';
     linkedEl.style.display = '';
     document.getElementById('swarm-linked-user').textContent =
-      '連携済み' + (_swarmAccount.clientId ? '（Client ID: ' + _swarmAccount.clientId + '）' : '');
+      '連携済み' + (_swarmConfig && _swarmConfig.clientId ? '（Client ID: ' + _swarmConfig.clientId + '）' : '');
   } else {
     formEl.style.display = '';
     linkedEl.style.display = 'none';
@@ -66,7 +84,7 @@ function _renderSwarmAccountStatus() {
 }
 
 // ── 連携（OAuth） ──
-function connectSwarmAccount() {
+async function connectSwarmAccount() {
   const statusEl = document.getElementById('swarm-status-settings');
   if (!requireLogin('Swarm連携')) return;
   const clientId = document.getElementById('swarm-client-id').value.trim();
@@ -76,9 +94,19 @@ function connectSwarmAccount() {
     statusEl.className = 'admin-status error';
     return;
   }
-  // リダイレクト後にページが再読み込みされるため、一時的にlocalStorageへ保存
-  localStorage.setItem('swarm_pending_client_id', clientId);
-  localStorage.setItem('swarm_pending_proxy_prefix', proxyPrefix);
+  if (!_isAdmin) {
+    statusEl.textContent = 'この設定は管理者のみ変更できます';
+    statusEl.className = 'admin-status error';
+    return;
+  }
+  try {
+    await _db.collection('admin_config').doc('swarm').set({ clientId, proxyPrefix }, { merge: true });
+    _swarmConfig = { clientId, proxyPrefix };
+  } catch(e) {
+    statusEl.textContent = '設定の保存に失敗しました: ' + e.message;
+    statusEl.className = 'admin-status error';
+    return;
+  }
   const redirectUri = encodeURIComponent(location.origin + location.pathname);
   location.href = `https://foursquare.com/oauth2/authenticate?client_id=${encodeURIComponent(clientId)}&response_type=token&redirect_uri=${redirectUri}`;
 }
@@ -92,16 +120,12 @@ async function _swarmHandleAuthReady(user) {
   if (!window._swarmPendingToken) return;
   const accessToken = window._swarmPendingToken;
   delete window._swarmPendingToken;
-  const clientId = localStorage.getItem('swarm_pending_client_id') || '';
-  const proxyPrefix = localStorage.getItem('swarm_pending_proxy_prefix') || '';
-  localStorage.removeItem('swarm_pending_client_id');
-  localStorage.removeItem('swarm_pending_proxy_prefix');
   try {
     await _db.collection('swarm_accounts').doc(user.uid).set({
-      accessToken, clientId, proxyPrefix,
+      accessToken,
       linkedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-    _swarmAccount = { accessToken, clientId, proxyPrefix };
+    _swarmAccount = { accessToken };
     if (currentSection === 'admin-swarm') {
       _renderSwarmAccountStatus();
       fetchSwarmCheckins();
@@ -166,7 +190,7 @@ async function searchSwarmVenues() {
     }
   }
   const queryParam = query ? `&query=${encodeURIComponent(query)}` : '';
-  const proxyPrefix = _swarmAccount.proxyPrefix || '';
+  const proxyPrefix = (_swarmConfig && _swarmConfig.proxyPrefix) || '';
   const apiUrl = `https://api.foursquare.com/v2/venues/search?oauth_token=${encodeURIComponent(_swarmAccount.accessToken)}&v=${SWARM_FOURSQUARE_API_VERSION}${queryParam}${locationParam}`;
   statusEl.textContent = '検索中...';
   statusEl.className = 'admin-status';
@@ -225,7 +249,7 @@ async function submitSwarmCheckin() {
     return;
   }
   const shout = document.getElementById('swarm-checkin-shout').value.trim();
-  const proxyPrefix = _swarmAccount.proxyPrefix || '';
+  const proxyPrefix = (_swarmConfig && _swarmConfig.proxyPrefix) || '';
   statusEl.textContent = 'チェックイン中...';
   statusEl.className = 'admin-status';
   try {
@@ -314,7 +338,7 @@ async function fetchSwarmCheckins() {
     return;
   }
   const limit = document.getElementById('swarm-fetch-limit').value || '25';
-  const proxyPrefix = _swarmAccount.proxyPrefix || '';
+  const proxyPrefix = (_swarmConfig && _swarmConfig.proxyPrefix) || '';
   const apiUrl = `https://api.foursquare.com/v2/users/self/checkins?oauth_token=${encodeURIComponent(_swarmAccount.accessToken)}&v=${SWARM_FOURSQUARE_API_VERSION}&limit=${encodeURIComponent(limit)}`;
   statusEl.textContent = '取得中...';
   statusEl.className = 'admin-status';
