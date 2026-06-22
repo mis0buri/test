@@ -144,11 +144,6 @@ async function searchSwarmVenues() {
   }
   const query = document.getElementById('swarm-venue-query').value.trim();
   const near = document.getElementById('swarm-venue-near').value.trim();
-  if (!query) {
-    statusEl.textContent = '検索キーワードを入力してください';
-    statusEl.className = 'admin-status error';
-    return;
-  }
   let locationParam = '';
   if (near) {
     locationParam = `&near=${encodeURIComponent(near)}`;
@@ -156,14 +151,15 @@ async function searchSwarmVenues() {
     const coords = await _getSwarmGeolocation();
     if (coords) {
       locationParam = `&ll=${coords.latitude},${coords.longitude}`;
-    } else {
-      statusEl.textContent = '場所を入力するか、位置情報の利用を許可してください';
+    } else if (!query) {
+      statusEl.textContent = '検索キーワードか場所を入力するか、位置情報の利用を許可してください';
       statusEl.className = 'admin-status error';
       return;
     }
   }
+  const queryParam = query ? `&query=${encodeURIComponent(query)}` : '';
   const proxyPrefix = _swarmAccount.proxyPrefix || '';
-  const apiUrl = `https://api.foursquare.com/v2/venues/search?query=${encodeURIComponent(query)}${locationParam}&oauth_token=${encodeURIComponent(_swarmAccount.accessToken)}&v=${SWARM_FOURSQUARE_API_VERSION}`;
+  const apiUrl = `https://api.foursquare.com/v2/venues/search?oauth_token=${encodeURIComponent(_swarmAccount.accessToken)}&v=${SWARM_FOURSQUARE_API_VERSION}${queryParam}${locationParam}`;
   statusEl.textContent = '検索中...';
   statusEl.className = 'admin-status';
   try {
