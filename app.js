@@ -158,6 +158,7 @@ function showSection(id) {
   if (isAdmin) {
     const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力','admin-swarm':'Swarm連携'};
     document.querySelectorAll('#subnav-admin button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
+    history.replaceState(null, '', location.pathname + location.search + '#admin/' + id.slice(6));
   }
 
   // 期間バーの表示
@@ -180,6 +181,17 @@ function showSection(id) {
   if (id==='admin-gather') initAdminGather();
   if (id==='admin-score') initAdminScore();
   if (id==='admin-swarm') initAdminSwarm();
+}
+
+// 管理者ページへの直リンク（#admin/members 等）対応。管理者ログイン確定後にのみ開く
+function _handleAdminHashRoute() {
+  const m = location.hash.match(/^#admin\/(members|gather|score|swarm)$/);
+  if (!m) return;
+  if (_isAdmin) {
+    showSection('admin-' + m[1]);
+  } else {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
 }
 
 // ── トップページ ──
@@ -566,7 +578,9 @@ function updateAuthUI(user) {
   if (user) {
     loginBtn.style.display = 'none';
     userInfo.style.display = 'flex';
-    _loadUserData(user);
+    _loadUserData(user).then(() => {
+      if (!wasResolved) _handleAdminHashRoute();
+    });
   } else {
     loginBtn.style.display = 'block';
     userInfo.style.display = 'none';

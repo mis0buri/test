@@ -860,6 +860,9 @@
 
     /* ローディングバー */
     #loading .ld-bar { width: min(200px, 80vw); }
+
+    /* 管理者フォーム：左右並びを縦並びに（ラベルの折り返しでズレるのを防ぐ） */
+    .admin-row-split { display: block; }
   }
 
   /* ── 管理者セクション ── */
