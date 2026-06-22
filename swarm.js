@@ -7,6 +7,14 @@ let _swarmCheckins = [];        // 直近に取得したチェックイン一覧
 let _swarmVenueResults = [];    // チェックイン用の場所検索結果
 let _swarmSelectedVenue = null; // チェックイン用に選択中の場所
 
+// ── セクション開閉 ──
+function toggleSwarmPanel(bodyId, arrowId) {
+  const body = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  const open = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+}
+
 // ── 初期化 ──
 async function initAdminSwarm() {
   if (!_isAdmin) return;

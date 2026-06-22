@@ -536,103 +536,125 @@
   <div id="sec-admin-swarm" class="section">
     <!-- ① アカウント連携 -->
     <div class="card">
-      <div class="admin-section-title">アカウント連携</div>
-      <div id="swarm-account-status" class="admin-empty">読み込み中...</div>
-      <div id="swarm-setup-form" style="display:none">
-        <div class="admin-form-group">
-          <label>Foursquare Client ID</label>
-          <input type="text" id="swarm-client-id" class="admin-input" placeholder="Foursquare Developer Consoleで取得したClient ID">
-        </div>
-        <div class="admin-form-group">
-          <label>リダイレクトURI（Foursquare側にも登録してください）</label>
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="swarm-redirect-uri" class="admin-input" readonly style="flex:1">
-            <button type="button" class="admin-btn sm" onclick="copySwarmRedirectUri()">コピー</button>
+      <button type="button" class="admin-card-toggle" onclick="toggleSwarmPanel('swarm-account-body','swarm-account-arrow')">
+        <span>アカウント連携</span>
+        <span class="jare-ocr-arrow open" id="swarm-account-arrow">▼</span>
+      </button>
+      <div class="admin-card-body open" id="swarm-account-body">
+        <div id="swarm-account-status" class="admin-empty">読み込み中...</div>
+        <div id="swarm-setup-form" style="display:none">
+          <div class="admin-form-group">
+            <label>Foursquare Client ID</label>
+            <input type="text" id="swarm-client-id" class="admin-input" placeholder="Foursquare Developer Consoleで取得したClient ID">
           </div>
+          <div class="admin-form-group">
+            <label>リダイレクトURI（Foursquare側にも登録してください）</label>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="swarm-redirect-uri" class="admin-input" readonly style="flex:1">
+              <button type="button" class="admin-btn sm" onclick="copySwarmRedirectUri()">コピー</button>
+            </div>
+          </div>
+          <div class="admin-form-group">
+            <label>CORSプロキシ（任意）</label>
+            <input type="text" id="swarm-proxy-prefix" class="admin-input" placeholder="例: https://corsproxy.io/?">
+            <div class="jare-ocr-note" style="margin-top:4px">Foursquare APIへの直接リクエストがCORSでブロックされる場合に、プロキシのURLを先頭に付与します</div>
+          </div>
+          <div id="swarm-status-settings" class="admin-status"></div>
+          <button class="admin-btn primary" style="width:100%" onclick="connectSwarmAccount()">Swarmと連携する</button>
         </div>
-        <div class="admin-form-group">
-          <label>CORSプロキシ（任意）</label>
-          <input type="text" id="swarm-proxy-prefix" class="admin-input" placeholder="例: https://corsproxy.io/?">
-          <div class="jare-ocr-note" style="margin-top:4px">Foursquare APIへの直接リクエストがCORSでブロックされる場合に、プロキシのURLを先頭に付与します</div>
+        <div id="swarm-linked-info" style="display:none">
+          <div class="admin-form-group">
+            <label>連携中のSwarmアカウント</label>
+            <div id="swarm-linked-user" style="font-size:13px;color:var(--text)"></div>
+          </div>
+          <button class="admin-btn danger" style="width:100%" onclick="unlinkSwarmAccount()">連携を解除する</button>
         </div>
-        <div id="swarm-status-settings" class="admin-status"></div>
-        <button class="admin-btn primary" style="width:100%" onclick="connectSwarmAccount()">Swarmと連携する</button>
-      </div>
-      <div id="swarm-linked-info" style="display:none">
-        <div class="admin-form-group">
-          <label>連携中のSwarmアカウント</label>
-          <div id="swarm-linked-user" style="font-size:13px;color:var(--text)"></div>
-        </div>
-        <button class="admin-btn danger" style="width:100%" onclick="unlinkSwarmAccount()">連携を解除する</button>
       </div>
     </div>
 
     <!-- ② チェックイン -->
     <div class="card">
-      <div class="admin-section-title">チェックイン</div>
-      <div class="admin-form-group">
-        <label>検索キーワード（未入力なら現在地から近いスポットを表示）</label>
-        <input type="text" id="swarm-venue-query" class="admin-input" placeholder="店名・施設名など（任意）">
-      </div>
-      <div class="admin-form-group">
-        <label>場所（未入力なら現在地を使用）</label>
-        <input type="text" id="swarm-venue-near" class="admin-input" placeholder="例: 渋谷区">
-      </div>
-      <button class="admin-btn" style="width:100%;margin-bottom:8px;" onclick="searchSwarmVenues()">場所を検索</button>
-      <div id="swarm-venue-results" class="swarm-venue-results"></div>
+      <button type="button" class="admin-card-toggle" onclick="toggleSwarmPanel('swarm-checkin-body','swarm-checkin-arrow')">
+        <span>チェックイン</span>
+        <span class="jare-ocr-arrow open" id="swarm-checkin-arrow">▼</span>
+      </button>
+      <div class="admin-card-body open" id="swarm-checkin-body">
+        <div class="admin-form-group">
+          <label>検索キーワード（未入力なら現在地から近いスポットを表示）</label>
+          <input type="text" id="swarm-venue-query" class="admin-input" placeholder="店名・施設名など（任意）">
+        </div>
+        <div class="admin-form-group">
+          <label>場所（未入力なら現在地を使用）</label>
+          <input type="text" id="swarm-venue-near" class="admin-input" placeholder="例: 渋谷区">
+        </div>
+        <button class="admin-btn" style="width:100%;margin-bottom:8px;" onclick="searchSwarmVenues()">場所を検索</button>
+        <div id="swarm-venue-results" class="swarm-venue-results"></div>
 
-      <div id="swarm-checkin-form" style="display:none;margin-top:12px;">
-        <hr class="admin-divider">
-        <div class="admin-form-group">
-          <label>選択した場所</label>
-          <div id="swarm-selected-venue" style="font-size:14px;font-weight:700;color:var(--accent)"></div>
+        <div id="swarm-checkin-form" style="display:none;margin-top:12px;">
+          <hr class="admin-divider">
+          <div class="admin-form-group">
+            <label>選択した場所</label>
+            <div id="swarm-selected-venue" style="font-size:14px;font-weight:700;color:var(--accent)"></div>
+          </div>
+          <div class="admin-form-group">
+            <label>コメント（任意）</label>
+            <textarea id="swarm-checkin-shout" class="admin-input" rows="2" placeholder="一言コメント"></textarea>
+          </div>
+          <button class="admin-btn primary" style="width:100%" onclick="submitSwarmCheckin()">チェックインする</button>
         </div>
-        <div class="admin-form-group">
-          <label>コメント（任意）</label>
-          <textarea id="swarm-checkin-shout" class="admin-input" rows="2" placeholder="一言コメント"></textarea>
-        </div>
-        <button class="admin-btn primary" style="width:100%" onclick="submitSwarmCheckin()">チェックインする</button>
+        <div id="swarm-status-checkin" class="admin-status"></div>
       </div>
-      <div id="swarm-status-checkin" class="admin-status"></div>
     </div>
 
     <!-- ③ 共有 -->
     <div class="card">
-      <div class="admin-section-title">共有</div>
-      <div class="admin-form-group">
-        <label>投稿テンプレート</label>
-        <textarea id="swarm-template-input" class="admin-input" rows="3" oninput="updateSwarmTemplatePreview()"></textarea>
-      </div>
-      <div class="swarm-token-chips">
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{venue}')">{venue}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{area}')">{area}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{state}')">{state}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{country}')">{country}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{lat}')">{lat}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{lng}')">{lng}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{shout}')">{shout}</button>
-        <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{url}')">{url}</button>
-      </div>
-      <div class="swarm-template-preview" id="swarm-template-preview"></div>
-
-      <hr class="admin-divider">
-
-      <div class="admin-row-split">
-        <div class="admin-form-group">
-          <label>取得件数</label>
-          <select id="swarm-fetch-limit" class="admin-select">
-            <option value="10">10件</option>
-            <option value="25" selected>25件</option>
-            <option value="50">50件</option>
-            <option value="100">100件</option>
-          </select>
+      <button type="button" class="admin-card-toggle" onclick="toggleSwarmPanel('swarm-share-body','swarm-share-arrow')">
+        <span>共有</span>
+        <span class="jare-ocr-arrow open" id="swarm-share-arrow">▼</span>
+      </button>
+      <div class="admin-card-body open" id="swarm-share-body">
+        <div class="jare-ocr-section">
+          <button type="button" class="jare-ocr-toggle" onclick="toggleSwarmPanel('swarm-template-body','swarm-template-arrow')">
+            <span>投稿テンプレート</span>
+            <span class="jare-ocr-arrow" id="swarm-template-arrow">▼</span>
+          </button>
+          <div class="jare-ocr-body" id="swarm-template-body">
+            <div class="admin-form-group">
+              <textarea id="swarm-template-input" class="admin-input" rows="3" oninput="updateSwarmTemplatePreview()"></textarea>
+            </div>
+            <div class="swarm-token-chips">
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{venue}')">{venue}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{area}')">{area}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{state}')">{state}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{country}')">{country}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{lat}')">{lat}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{lng}')">{lng}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{shout}')">{shout}</button>
+              <button type="button" class="swarm-token-chip" onclick="insertSwarmToken('{url}')">{url}</button>
+            </div>
+            <div class="swarm-template-preview" id="swarm-template-preview"></div>
+          </div>
         </div>
-      </div>
-      <button class="admin-btn primary" style="width:100%;margin-bottom:8px;" onclick="fetchSwarmCheckins()">チェックインを更新</button>
-      <div id="swarm-status-fetch" class="admin-status"></div>
 
-      <div id="swarm-checkin-list" class="swarm-checkin-list">
-        <div class="admin-empty">Swarmと連携するとチェックイン一覧が表示されます</div>
+        <hr class="admin-divider">
+
+        <div class="admin-row-split">
+          <div class="admin-form-group">
+            <label>取得件数</label>
+            <select id="swarm-fetch-limit" class="admin-select">
+              <option value="10">10件</option>
+              <option value="25" selected>25件</option>
+              <option value="50">50件</option>
+              <option value="100">100件</option>
+            </select>
+          </div>
+        </div>
+        <button class="admin-btn primary" style="width:100%;margin-bottom:8px;" onclick="fetchSwarmCheckins()">チェックインを更新</button>
+        <div id="swarm-status-fetch" class="admin-status"></div>
+
+        <div id="swarm-checkin-list" class="swarm-checkin-list">
+          <div class="admin-empty">Swarmと連携するとチェックイン一覧が表示されます</div>
+        </div>
       </div>
     </div>
   </div>
