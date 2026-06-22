@@ -575,6 +575,8 @@
             <label>連携中のSwarmアカウント</label>
             <div id="swarm-linked-user" style="font-size:13px;color:var(--text)"></div>
           </div>
+          <button class="admin-btn" style="width:100%;margin-bottom:8px" onclick="switchSwarmAccount()">別のアカウントに切り替える</button>
+          <div class="jare-ocr-note" style="margin-bottom:14px">Foursquareは既にログイン済みのアカウントで再連携されるため、切り替えには一度Foursquare側からログアウトする必要があります。上のボタンを押すとログアウト用ページが新しいタブで開きます。ログアウトできたらこのタブに戻り「Swarmと連携する」を押してください。</div>
           <button class="admin-btn danger" style="width:100%" onclick="unlinkSwarmAccount()">連携を解除する</button>
         </div>
       </div>

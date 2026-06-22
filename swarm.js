@@ -157,6 +157,19 @@ async function _swarmHandleAuthReady(user) {
 async function unlinkSwarmAccount() {
   if (!_currentUser || !_db) return;
   if (!confirm('Swarmとの連携を解除しますか？')) return;
+  await _unlinkSwarmAccountSilent();
+}
+
+// 別アカウントへの切り替え: Foursquareは既存のログイン状態を使って再連携してしまうため、
+// ログアウト用ページを別タブで開いてから連携解除する
+function switchSwarmAccount() {
+  if (!_currentUser || !_db) return;
+  if (!confirm('別のSwarmアカウントに切り替えますか？\n新しいタブでFoursquareのログアウトページを開きます。ログアウト後、このタブで再度「Swarmと連携する」を押してください。')) return;
+  window.open('https://foursquare.com/logout', '_blank');
+  _unlinkSwarmAccountSilent();
+}
+
+async function _unlinkSwarmAccountSilent() {
   try {
     await _db.collection('swarm_accounts').doc(_currentUser.uid).delete();
     _swarmAccount = null;
