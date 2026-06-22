@@ -124,7 +124,7 @@ function filteredGathers() {
 // ── ナビ ──
 const _STATS = ['ranking','member','graph','history'];
 const _GALLERY = ['gallery','jare','jare-detail'];
-const _ADMIN = ['admin-members','admin-gather','admin-score'];
+const _ADMIN = ['admin-members','admin-gather','admin-score','admin-swarm'];
 function showSection(id) {
   currentSection = id;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -156,7 +156,7 @@ function showSection(id) {
     document.querySelectorAll('#subnav-gallery button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
   }
   if (isAdmin) {
-    const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力'};
+    const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力','admin-swarm':'Swarm連携'};
     document.querySelectorAll('#subnav-admin button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
     history.replaceState(null, '', location.pathname + location.search + '#admin/' + id.slice(6));
   }
@@ -180,12 +180,13 @@ function showSection(id) {
   if (id==='admin-members') initAdminMembers();
   if (id==='admin-gather') initAdminGather();
   if (id==='admin-score') initAdminScore();
-  if (id==='swarm') initSwarm();
+  if (id==='admin-swarm') initSwarm('admin');
+  if (id==='swarm') initSwarm('main');
 }
 
 // 管理者ページへの直リンク（#admin/members 等）対応。管理者ログイン確定後にのみ開く
 function _handleAdminHashRoute() {
-  const m = location.hash.match(/^#admin\/(members|gather|score)$/);
+  const m = location.hash.match(/^#admin\/(members|gather|score|swarm)$/);
   if (!m) return;
   if (_isAdmin) {
     showSection('admin-' + m[1]);
@@ -523,6 +524,8 @@ function initFirebase() {
   const swarmTokenMatch = location.hash.match(/access_token=([^&]+)/);
   if (swarmTokenMatch) {
     window._swarmPendingToken = decodeURIComponent(swarmTokenMatch[1]);
+    window._swarmPendingNs = localStorage.getItem('swarm_pending_ns') || 'main';
+    localStorage.removeItem('swarm_pending_ns');
     history.replaceState(null, '', location.pathname + location.search);
   }
 
