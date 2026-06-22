@@ -17,16 +17,17 @@ function toggleSwarmPanel(bodyId, arrowId) {
 }
 
 // ── 初期化 ──
-async function initAdminSwarm() {
-  if (!_isAdmin) return;
-  document.getElementById('swarm-redirect-uri').value = location.origin + location.pathname;
+async function initSwarm() {
   document.getElementById('swarm-template-input').value = localStorage.getItem('swarm_template') || SWARM_DEFAULT_TEMPLATE;
   updateSwarmTemplatePreview();
 
   await _loadSwarmConfig();
-  if (_swarmConfig) {
-    document.getElementById('swarm-client-id').value = _swarmConfig.clientId || '';
-    document.getElementById('swarm-proxy-prefix').value = _swarmConfig.proxyPrefix || '';
+  if (_isAdmin) {
+    document.getElementById('swarm-redirect-uri').value = location.origin + location.pathname;
+    if (_swarmConfig) {
+      document.getElementById('swarm-client-id').value = _swarmConfig.clientId || '';
+      document.getElementById('swarm-proxy-prefix').value = _swarmConfig.proxyPrefix || '';
+    }
   }
 
   await _loadSwarmAccount();
@@ -62,31 +63,41 @@ async function _loadSwarmAccount() {
 
 function _renderSwarmAccountStatus() {
   const statusEl = document.getElementById('swarm-account-status');
-  const formEl = document.getElementById('swarm-setup-form');
+  const adminConfigEl = document.getElementById('swarm-admin-config');
+  const notConfiguredEl = document.getElementById('swarm-not-configured');
+  const connectFormEl = document.getElementById('swarm-connect-form');
   const linkedEl = document.getElementById('swarm-linked-info');
+  adminConfigEl.style.display = _isAdmin ? '' : 'none';
   if (!_currentUser) {
     statusEl.textContent = 'Swarmと連携するには、まずこのページにログインしてください';
     statusEl.style.display = '';
-    formEl.style.display = 'none';
+    notConfiguredEl.style.display = 'none';
+    connectFormEl.style.display = 'none';
     linkedEl.style.display = 'none';
     return;
   }
   statusEl.style.display = 'none';
   if (_swarmAccount && _swarmAccount.accessToken) {
-    formEl.style.display = 'none';
+    notConfiguredEl.style.display = 'none';
+    connectFormEl.style.display = 'none';
     linkedEl.style.display = '';
     document.getElementById('swarm-linked-user').textContent =
-      '連携済み' + (_swarmConfig && _swarmConfig.clientId ? '（Client ID: ' + _swarmConfig.clientId + '）' : '');
+      '連携済み' + (_isAdmin && _swarmConfig && _swarmConfig.clientId ? '（Client ID: ' + _swarmConfig.clientId + '）' : '');
+  } else if (_swarmConfig && _swarmConfig.clientId) {
+    notConfiguredEl.style.display = 'none';
+    connectFormEl.style.display = '';
+    linkedEl.style.display = 'none';
   } else {
-    formEl.style.display = '';
+    notConfiguredEl.style.display = '';
+    connectFormEl.style.display = 'none';
     linkedEl.style.display = 'none';
   }
 }
 
-// ── 連携（OAuth） ──
-async function connectSwarmAccount() {
+// ── Foursquareアプリ設定（管理者のみ・サイト全体で共有） ──
+async function saveSwarmConfig() {
   const statusEl = document.getElementById('swarm-status-settings');
-  if (!requireLogin('Swarm連携')) return;
+  if (!_isAdmin) return;
   const clientId = document.getElementById('swarm-client-id').value.trim();
   const proxyPrefix = document.getElementById('swarm-proxy-prefix').value.trim();
   if (!clientId) {
@@ -94,21 +105,29 @@ async function connectSwarmAccount() {
     statusEl.className = 'admin-status error';
     return;
   }
-  if (!_isAdmin) {
-    statusEl.textContent = 'この設定は管理者のみ変更できます';
-    statusEl.className = 'admin-status error';
-    return;
-  }
   try {
     await _db.collection('admin_config').doc('swarm').set({ clientId, proxyPrefix }, { merge: true });
     _swarmConfig = { clientId, proxyPrefix };
+    statusEl.textContent = '保存しました ✓';
+    statusEl.className = 'admin-status ok';
+    _renderSwarmAccountStatus();
   } catch(e) {
-    statusEl.textContent = '設定の保存に失敗しました: ' + e.message;
+    statusEl.textContent = '保存に失敗しました: ' + e.message;
+    statusEl.className = 'admin-status error';
+  }
+}
+
+// ── 連携（OAuth） ──
+function connectSwarmAccount() {
+  const statusEl = document.getElementById('swarm-status-connect');
+  if (!requireLogin('Swarm連携')) return;
+  if (!_swarmConfig || !_swarmConfig.clientId) {
+    statusEl.textContent = 'サイト管理者がまだ設定していません';
     statusEl.className = 'admin-status error';
     return;
   }
   const redirectUri = encodeURIComponent(location.origin + location.pathname);
-  location.href = `https://foursquare.com/oauth2/authenticate?client_id=${encodeURIComponent(clientId)}&response_type=token&redirect_uri=${redirectUri}`;
+  location.href = `https://foursquare.com/oauth2/authenticate?client_id=${encodeURIComponent(_swarmConfig.clientId)}&response_type=token&redirect_uri=${redirectUri}`;
 }
 
 // app.jsのonAuthStateChangedから呼ばれる（OAuthコールバック後のトークンをFirestoreへ保存）
@@ -126,7 +145,7 @@ async function _swarmHandleAuthReady(user) {
       linkedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     _swarmAccount = { accessToken };
-    if (currentSection === 'admin-swarm') {
+    if (currentSection === 'swarm') {
       _renderSwarmAccountStatus();
       fetchSwarmCheckins();
     }

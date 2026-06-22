@@ -124,7 +124,7 @@ function filteredGathers() {
 // ── ナビ ──
 const _STATS = ['ranking','member','graph','history'];
 const _GALLERY = ['gallery','jare','jare-detail'];
-const _ADMIN = ['admin-members','admin-gather','admin-score','admin-swarm'];
+const _ADMIN = ['admin-members','admin-gather','admin-score'];
 function showSection(id) {
   currentSection = id;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -156,13 +156,13 @@ function showSection(id) {
     document.querySelectorAll('#subnav-gallery button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
   }
   if (isAdmin) {
-    const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力','admin-swarm':'Swarm連携'};
+    const subLabels = {'admin-members':'メンバー管理','admin-gather':'対局登録','admin-score':'スコア入力'};
     document.querySelectorAll('#subnav-admin button').forEach(b=>b.classList.toggle('active', b.textContent===subLabels[id]));
     history.replaceState(null, '', location.pathname + location.search + '#admin/' + id.slice(6));
   }
 
   // 期間バーの表示
-  document.querySelector('.period-bar').style.display = (id==='top'||id==='feedback'||id==='schedule'||id==='board'||id==='renban'||id==='boshu'||id==='stamp'||isGallery||isAdmin) ? 'none' : '';
+  document.querySelector('.period-bar').style.display = (id==='top'||id==='feedback'||id==='schedule'||id==='board'||id==='renban'||id==='boshu'||id==='stamp'||id==='swarm'||isGallery||isAdmin) ? 'none' : '';
 
   if (id==='graph') renderChart(filteredGathers());
   if (id==='member' && activeMemberName) renderMemberCharts(activeMemberName);
@@ -180,12 +180,12 @@ function showSection(id) {
   if (id==='admin-members') initAdminMembers();
   if (id==='admin-gather') initAdminGather();
   if (id==='admin-score') initAdminScore();
-  if (id==='admin-swarm') initAdminSwarm();
+  if (id==='swarm') initSwarm();
 }
 
 // 管理者ページへの直リンク（#admin/members 等）対応。管理者ログイン確定後にのみ開く
 function _handleAdminHashRoute() {
-  const m = location.hash.match(/^#admin\/(members|gather|score|swarm)$/);
+  const m = location.hash.match(/^#admin\/(members|gather|score)$/);
   if (!m) return;
   if (_isAdmin) {
     showSection('admin-' + m[1]);
@@ -578,6 +578,8 @@ function updateAuthUI(user) {
   if (user) {
     loginBtn.style.display = 'none';
     userInfo.style.display = 'flex';
+    const navSwarmBtn = document.getElementById('nav-swarm-btn');
+    if (navSwarmBtn) navSwarmBtn.style.display = '';
     _loadUserData(user).then(() => {
       if (!wasResolved) _handleAdminHashRoute();
     });
@@ -589,6 +591,8 @@ function updateAuthUI(user) {
     _isManager = false;
     const _navAdminBtn = document.getElementById('nav-admin-btn');
     if (_navAdminBtn) _navAdminBtn.style.display = 'none';
+    const _navSwarmBtn = document.getElementById('nav-swarm-btn');
+    if (_navSwarmBtn) _navSwarmBtn.style.display = 'none';
     _refreshBoardIfActive();
     _refreshJareIfActive();
   }

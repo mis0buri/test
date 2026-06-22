@@ -150,6 +150,7 @@
     <button data-nav="board" onclick="showSection('board')">掲示板</button>
     <button data-nav="renban" onclick="showSection('renban')">連番募集</button>
     <button data-nav="feedback" onclick="showSection('feedback')">ご意見</button>
+    <button data-nav="swarm" id="nav-swarm-btn" style="display:none;" onclick="showSection('swarm')">Swarm連携</button>
     <button data-nav="admin" id="nav-admin-btn" style="display:none;color:#e63946;" onclick="showSection('admin-members')">管理者</button>
   </nav>
   <div id="auth-area">
@@ -180,7 +181,6 @@
   <button onclick="showSection('admin-members')">メンバー管理</button>
   <button onclick="showSection('admin-gather')">対局登録</button>
   <button onclick="showSection('admin-score')">スコア入力</button>
-  <button onclick="showSection('admin-swarm')">Swarm連携</button>
 </div>
 
 <!-- 全画面共通 期間フィルター -->
@@ -532,8 +532,8 @@
     </div>
   </div>
 
-  <!-- ── 管理者：Swarm連携 ── -->
-  <div id="sec-admin-swarm" class="section">
+  <!-- ── Swarm連携（ログインユーザー向け） ── -->
+  <div id="sec-swarm" class="section">
     <!-- ① アカウント連携 -->
     <div class="card">
       <button type="button" class="admin-card-toggle" onclick="toggleSwarmPanel('swarm-account-body','swarm-account-arrow')">
@@ -541,10 +541,10 @@
         <span class="jare-ocr-arrow open" id="swarm-account-arrow">▼</span>
       </button>
       <div class="admin-card-body open" id="swarm-account-body">
-        <div id="swarm-account-status" class="admin-empty">読み込み中...</div>
-        <div id="swarm-setup-form" style="display:none">
+        <div id="swarm-admin-config" style="display:none">
+          <div class="jare-ocr-note" style="margin-bottom:10px">以下はサイト全体で共有される設定です（管理者のみ変更できます）</div>
           <div class="admin-form-group">
-            <label>Foursquare Client ID（サイト全体で共有される設定です）</label>
+            <label>Foursquare Client ID</label>
             <input type="text" id="swarm-client-id" class="admin-input" placeholder="Foursquare Developer Consoleで取得したClient ID">
           </div>
           <div class="admin-form-group">
@@ -555,11 +555,19 @@
             </div>
           </div>
           <div class="admin-form-group">
-            <label>CORSプロキシ（任意・サイト全体で共有される設定です）</label>
+            <label>CORSプロキシ（任意）</label>
             <input type="text" id="swarm-proxy-prefix" class="admin-input" placeholder="例: https://corsproxy.io/?">
             <div class="jare-ocr-note" style="margin-top:4px">Foursquare APIへの直接リクエストがCORSでブロックされる場合に、プロキシのURLを先頭に付与します</div>
           </div>
           <div id="swarm-status-settings" class="admin-status"></div>
+          <button class="admin-btn" style="width:100%;margin-bottom:14px" onclick="saveSwarmConfig()">設定を保存</button>
+          <hr class="admin-divider">
+        </div>
+
+        <div id="swarm-account-status" class="admin-empty">読み込み中...</div>
+        <div id="swarm-not-configured" class="admin-empty" style="display:none">サイト管理者がまだFoursquare連携の設定をしていません</div>
+        <div id="swarm-connect-form" style="display:none">
+          <div id="swarm-status-connect" class="admin-status"></div>
           <button class="admin-btn primary" style="width:100%" onclick="connectSwarmAccount()">Swarmと連携する</button>
         </div>
         <div id="swarm-linked-info" style="display:none">
