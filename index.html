@@ -570,15 +570,13 @@
     <!-- ② チェックイン -->
     <div class="card">
       <div class="admin-section-title">チェックイン</div>
-      <div class="admin-row-split">
-        <div class="admin-form-group">
-          <label>検索キーワード <span style="color:var(--red)">*</span></label>
-          <input type="text" id="swarm-venue-query" class="admin-input" placeholder="店名・施設名など">
-        </div>
-        <div class="admin-form-group">
-          <label>場所（未入力なら現在地を使用）</label>
-          <input type="text" id="swarm-venue-near" class="admin-input" placeholder="例: 渋谷区">
-        </div>
+      <div class="admin-form-group">
+        <label>検索キーワード <span style="color:var(--red)">*</span></label>
+        <input type="text" id="swarm-venue-query" class="admin-input" placeholder="店名・施設名など">
+      </div>
+      <div class="admin-form-group">
+        <label>場所（未入力なら現在地を使用）</label>
+        <input type="text" id="swarm-venue-near" class="admin-input" placeholder="例: 渋谷区">
       </div>
       <button class="admin-btn" style="width:100%;margin-bottom:8px;" onclick="searchSwarmVenues()">場所を検索</button>
       <div id="swarm-venue-results" class="swarm-venue-results"></div>
